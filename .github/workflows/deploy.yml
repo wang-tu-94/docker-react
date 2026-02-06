@@ -18,7 +18,24 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker Image
-        run: docker build -t cygnetops/react-test -f Dockerfile.dev .
+        run: docker build -t magnomos/react-test -f Dockerfile.dev .
 
       - name: Run Tests
-        run: docker run -e CI=true cygnetops/react-test npm test
+        run: docker run -e CI=true magnomos/react-test npm test
+
+      - name: Generate deployment package
+        run: zip deploy.zip Dockerfile
+
+      - name: Deploy to EB
+        uses: einaregilsson/beanstalk-deploy@v22
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }} # INDISPENSABLE
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # INDISPENSABLE
+          application_name: frontend
+          environment_name: Frontend-env
+          region: eu-west-3
+          version_label: ${{ github.sha }}
+          deployment_package: deploy.zip
+          # Optionnel mais recommandé :
+          existing_bucket_name: elasticbeanstalk-eu-west-3-400071114910
+          bucket-path: frontend
